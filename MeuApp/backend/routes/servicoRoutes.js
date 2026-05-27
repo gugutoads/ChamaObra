@@ -55,8 +55,8 @@ router.get('/', async (req, res) => {
 
     res.json(servicosComFotos);
   } catch (err) {
-    console.error('Erro ao buscar serviços:', err);
-    res.status(500).json({ error: 'Erro ao buscar serviços' });
+    console.error('Erro ao buscar serviços:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar serviços', detail: err.message });
   }
 });
 
