@@ -30,18 +30,18 @@ router.get('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query(
-      `SELECT p.*,
+      `SELECT p."id", p."servicoId", p."prestadorId", p."valor", p."prazo", p."descricao", p."status", p."data_agendada", p."horario_agendado", p."criado_em",
               u.nome as prestadorNome,
               u.servico as prestadorServico,
               u.experiencia as prestadorExperiencia,
               s.titulo as servicoTitulo,
               s.endereco as servicoLocalizacao,
-              s.clienteId as clienteId,
+              s."clienteId" as clienteId,
               c.nome as clienteNome
-       FROM propostas p
-       JOIN usuarios u ON p.prestadorId = u.id
-       JOIN servicos s ON p.servicoId = s.id
-       LEFT JOIN usuarios c ON s.clienteId = c.id
+       FROM "propostas" p
+       JOIN "usuarios" u ON p."prestadorId" = u.id
+       JOIN "servicos" s ON p."servicoId" = s.id
+       LEFT JOIN "usuarios" c ON s."clienteId" = c.id
        WHERE p.id = $1`,
       [id]
     );
