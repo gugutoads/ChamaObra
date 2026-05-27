@@ -2,6 +2,13 @@ const { drizzle } = require('drizzle-orm/node-postgres');
 const { Pool } = require('pg');
 require('dotenv').config();
 
+console.log('DB_CONFIG:', {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
+});
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
