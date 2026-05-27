@@ -1,8 +1,9 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Use seu IP local (rode "ipconfig" no terminal para descobrir)
-const API_URL = 'http://192.168.1.10:3001/api';
+// Produção: API do Vercel
+// Desenvolvimento: seu IP local
+const API_URL = 'https://chama-obra.vercel.app/api';
 
 const api = axios.create({
   baseURL: API_URL,
