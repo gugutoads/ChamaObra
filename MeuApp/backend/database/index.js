@@ -1,6 +1,5 @@
 const { drizzle } = require('drizzle-orm/node-postgres');
 const { Pool } = require('pg');
-require('dotenv').config();
 
 console.log('DB_CONFIG:', {
   host: process.env.DB_HOST,

@@ -5,7 +5,6 @@ const { usuarios } = require('../database/schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { eq, and } = require('drizzle-orm');
-require('dotenv').config();
 
 router.get('/prestadores', async (req, res) => {
   try {
