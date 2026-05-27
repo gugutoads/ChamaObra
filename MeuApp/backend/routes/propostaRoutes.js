@@ -29,7 +29,7 @@ router.post('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       `SELECT p.*,
               u.nome as prestadorNome,
               u.servico as prestadorServico,
@@ -42,7 +42,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
        JOIN usuarios u ON p.prestadorId = u.id
        JOIN servicos s ON p.servicoId = s.id
        LEFT JOIN usuarios c ON s.clienteId = c.id
-       WHERE p.id = ?`,
+       WHERE p.id = $1`,
       [id]
     );
     res.json(rows[0] || null);
