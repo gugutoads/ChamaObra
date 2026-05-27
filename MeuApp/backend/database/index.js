@@ -16,6 +16,7 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 5432,
   max: 10,
+  ssl: { rejectUnauthorized: false },
 });
 
 const db = drizzle(pool);
