@@ -23,15 +23,14 @@ app.use('/api/pagamentos', require('./routes/pagamentoRoutes'));
 
 // Endpoint de diagnóstico
 app.get('/api/test', async (req, res) => {
-  try {
-    const { pool } = require('./database');
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
-    res.json({ status: 'Banco conectado com sucesso!' });
-  } catch (err) {
-    res.json({ erro: err.message, codigo: err.code });
-  }
+  res.json({
+    DB_HOST: process.env.DB_HOST,
+    DB_USER: process.env.DB_USER,
+    DB_NAME: process.env.DB_NAME,
+    DB_PORT: process.env.DB_PORT,
+    JWT_SECRET: process.env.JWT_SECRET,
+    todas: Object.keys(process.env).filter(k => k.startsWith('DB') || k === 'JWT_SECRET')
+  });
 });
 
 // Para Vercel
