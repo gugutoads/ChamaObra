@@ -21,8 +21,14 @@ app.use('/api/usuarios', require('./routes/authRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/pagamentos', require('./routes/pagamentoRoutes'));
 
-const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
-});
+// Para Vercel
+module.exports = app;
+
+// Para local
+if (process.env.VERCEL !== 'true') {
+  const PORT = process.env.PORT || 3001;
+  const HOST = process.env.HOST || '0.0.0.0';
+  app.listen(PORT, HOST, () => {
+    console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+  });
+}
