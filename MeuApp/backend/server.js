@@ -40,9 +40,16 @@ app.get('/api/setup', async (req, res) => {
     const { pool } = require('./database');
     const client = await pool.connect();
 
-    // Criar tabelas
+    // Dropar tabelas existentes
+    await client.query(`DROP TABLE IF EXISTS pagamentos CASCADE`);
+    await client.query(`DROP TABLE IF EXISTS mensagens CASCADE`);
+    await client.query(`DROP TABLE IF EXISTS propostas CASCADE`);
+    await client.query(`DROP TABLE IF EXISTS servicos CASCADE`);
+    await client.query(`DROP TABLE IF EXISTS usuarios CASCADE`);
+
+    // Criar tabelas com nomes corretos para o Drizzle
     await client.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
+      CREATE TABLE usuarios (
         id SERIAL PRIMARY KEY,
         nome VARCHAR(100),
         email VARCHAR(100) NOT NULL,
@@ -54,9 +61,9 @@ app.get('/api/setup', async (req, res) => {
         experiencia TEXT
       );
 
-      CREATE TABLE IF NOT EXISTS servicos (
+      CREATE TABLE servicos (
         id SERIAL PRIMARY KEY,
-        "clienteId" INTEGER NOT NULL REFERENCES usuarios(id),
+        "clienteId" INTEGER NOT NULL,
         titulo TEXT,
         descricao TEXT,
         metragem VARCHAR(50),
@@ -70,10 +77,10 @@ app.get('/api/setup', async (req, res) => {
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS propostas (
+      CREATE TABLE propostas (
         id SERIAL PRIMARY KEY,
-        "servicoId" INTEGER NOT NULL REFERENCES servicos(id),
-        "prestadorId" INTEGER NOT NULL REFERENCES usuarios(id),
+        "servicoId" INTEGER NOT NULL,
+        "prestadorId" INTEGER NOT NULL,
         valor DECIMAL(10, 2),
         prazo VARCHAR(255),
         descricao TEXT,
@@ -83,30 +90,56 @@ app.get('/api/setup', async (req, res) => {
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS mensagens (
+      CREATE TABLE mensagens (
         id SERIAL PRIMARY KEY,
-        "servicoId" INTEGER NOT NULL REFERENCES servicos(id),
+        "servicoId" INTEGER NOT NULL,
         "propostaId" INTEGER,
-        "remetenteId" INTEGER NOT NULL REFERENCES usuarios(id),
-        "destinatarioId" INTEGER NOT NULL REFERENCES usuarios(id),
+        "remetenteId" INTEGER NOT NULL,
+        "destinatarioId" INTEGER NOT NULL,
         mensagem TEXT NOT NULL,
         lida BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS pagamentos (
+      CREATE TABLE pagamentos (
         id SERIAL PRIMARY KEY,
-        "propostaId" INTEGER NOT NULL REFERENCES propostas(id),
+        "propostaId" INTEGER NOT NULL,
         valor DECIMAL(10, 2) NOT NULL,
         status VARCHAR(50) DEFAULT 'PENDENTE',
         metodo_pagamento VARCHAR(50) DEFAULT 'ESCROW',
         data_pagamento TIMESTAMP,
         data_criacao TIMESTAMP DEFAULT NOW()
       );
+
+      ALTER TABLE servicos ADD CONSTRAINT fk_servicos_cliente FOREIGN KEY ("clienteId") REFERENCES usuarios(id);
+      ALTER TABLE propostas ADD CONSTRAINT fk_propostas_servico FOREIGN KEY ("servicoId") REFERENCES servicos(id);
+      ALTER TABLE propostas ADD CONSTRAINT fk_propostas_prestador FOREIGN KEY ("prestadorId") REFERENCES usuarios(id);
+      ALTER TABLE mensagens ADD CONSTRAINT fk_mensagens_servico FOREIGN KEY ("servicoId") REFERENCES servicos(id);
+      ALTER TABLE mensagens ADD CONSTRAINT fk_mensagens_remetente FOREIGN KEY ("remetenteId") REFERENCES usuarios(id);
+      ALTER TABLE mensagens ADD CONSTRAINT fk_mensagens_destinatario FOREIGN KEY ("destinatarioId") REFERENCES usuarios(id);
+      ALTER TABLE pagamentos ADD CONSTRAINT fk_pagamentos_proposta FOREIGN KEY ("propostaId") REFERENCES propostas(id);
     `);
 
     client.release();
-    res.json({ status: 'Tabelas criadas com sucesso!' });
+    res.json({ status: 'Tabelas Recriadas com sucesso!' });
+  } catch (err) {
+    res.json({ erro: err.message });
+  }
+});
+
+// Endpoint para ver colunas
+app.get('/api/cols', async (req, res) => {
+  try {
+    const { pool } = require('./database');
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'servicos'
+      ORDER BY ordinal_position
+    `);
+    client.release();
+    res.json({ colunas: result.rows });
   } catch (err) {
     res.json({ erro: err.message });
   }
