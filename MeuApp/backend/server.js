@@ -26,11 +26,11 @@ app.get('/api/test', async (req, res) => {
   try {
     const { pool } = require('./database');
     const client = await pool.connect();
-    await client.query('SELECT 1');
+    const result = await client.query('SELECT NOW() as agora');
     client.release();
-    res.json({ status: 'Banco conectado com sucesso!' });
+    res.json({ status: 'Banco conectado!', hora: result.rows[0].agora });
   } catch (err) {
-    res.json({ erro: err.message, codigo: err.code, hostname: process.env.DB_HOST });
+    res.json({ erro: err.message, codigo: err.code, host: process.env.DB_HOST });
   }
 });
 
