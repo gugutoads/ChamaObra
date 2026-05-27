@@ -22,15 +22,16 @@ app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/pagamentos', require('./routes/pagamentoRoutes'));
 
 // Endpoint de diagnóstico
-app.get('/api/test', (req, res) => {
-  res.json({
-    db_host: process.env.DB_HOST ? 'setado' : 'undefined',
-    db_user: process.env.DB_USER ? 'setado' : 'undefined',
-    db_name: process.env.DB_NAME ? 'setado' : 'undefined',
-    db_port: process.env.DB_PORT,
-    node_env: process.env.NODE_ENV,
-    vercel: process.env.VERCEL
-  });
+app.get('/api/test', async (req, res) => {
+  try {
+    const { pool } = require('./database');
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+    res.json({ status: 'Banco conectado com sucesso!' });
+  } catch (err) {
+    res.json({ erro: err.message, codigo: err.code });
+  }
 });
 
 // Para Vercel
