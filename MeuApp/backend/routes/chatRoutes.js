@@ -40,11 +40,11 @@ router.get('/', authMiddleware, async (req, res) => {
         destinatarioId: mensagens.destinatarioId,
         mensagem: mensagens.mensagem,
         lida: mensagens.lida,
-        created_at: mensagens.created_at,
+        createdAt: mensagens.createdAt,
       }).from(mensagens)
         .where(eq(mensagens.servicoId, parseInt(servicoId)))
         .where(eq(mensagens.propostaId, parseInt(propostaId)))
-        .orderBy(asc(mensagens.created_at));
+        .orderBy(asc(mensagens.createdAt));
     } else {
       result = await db.select({
         id: mensagens.id,
@@ -54,10 +54,10 @@ router.get('/', authMiddleware, async (req, res) => {
         destinatarioId: mensagens.destinatarioId,
         mensagem: mensagens.mensagem,
         lida: mensagens.lida,
-        created_at: mensagens.created_at,
+        createdAt: mensagens.createdAt,
       }).from(mensagens)
         .where(eq(mensagens.servicoId, parseInt(servicoId)))
-        .orderBy(asc(mensagens.created_at));
+        .orderBy(asc(mensagens.createdAt));
     }
 
     // Buscar nome do remetente para cada mensagem
