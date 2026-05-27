@@ -30,44 +30,28 @@ router.get('/', authMiddleware, async (req, res) => {
   const userId = req.userId;
 
   try {
-    let result;
+    let query = db.select().from(mensagens);
+
     if (propostaId) {
-      result = await db.select({
-        id: mensagens.id,
-        servicoId: mensagens.servicoId,
-        propostaId: mensagens.propostaId,
-        remetenteId: mensagens.remetenteId,
-        destinatarioId: mensagens.destinatarioId,
-        mensagem: mensagens.mensagem,
-        lida: mensagens.lida,
-        createdAt: mensagens.createdAt,
-      }).from(mensagens)
-        .where(eq(mensagens.servicoId, parseInt(servicoId)))
-        .where(eq(mensagens.propostaId, parseInt(propostaId)))
-        .orderBy(asc(mensagens.createdAt));
+      query = query.where(eq(mensagens.servicoId, parseInt(servicoId)))
+        .where(eq(mensagens.propostaId, parseInt(propostaId)));
     } else {
-      result = await db.select({
-        id: mensagens.id,
-        servicoId: mensagens.servicoId,
-        propostaId: mensagens.propostaId,
-        remetenteId: mensagens.remetenteId,
-        destinatarioId: mensagens.destinatarioId,
-        mensagem: mensagens.mensagem,
-        lida: mensagens.lida,
-        createdAt: mensagens.createdAt,
-      }).from(mensagens)
-        .where(eq(mensagens.servicoId, parseInt(servicoId)))
-        .orderBy(asc(mensagens.createdAt));
+      query = query.where(eq(mensagens.servicoId, parseInt(servicoId)));
     }
 
+    const rows = await query.orderBy(asc(mensagens.createdAt));
+
     // Buscar nome do remetente para cada mensagem
-    const resultWithSender = await Promise.all(result.map(async (msg) => {
-      const userResult = await pool.query('SELECT nome, tipo FROM usuarios WHERE id = $1', [msg.remetenteId]);
-      const user = userResult.rows[0] || {};
+    const resultWithSender = await Promise.all(rows.map(async (msg) => {
+      const [user] = await db.select({
+        nome: usuarios.nome,
+        tipo: usuarios.tipo,
+      }).from(usuarios).where(eq(usuarios.id, msg.remetenteId));
+
       return {
         ...msg,
-        remetenteNome: user.nome,
-        remetenteTipo: user.tipo,
+        remetenteNome: user?.nome || '',
+        remetenteTipo: user?.tipo || '',
       };
     }));
 
