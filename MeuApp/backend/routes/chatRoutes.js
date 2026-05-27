@@ -62,8 +62,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
     // Buscar nome do remetente para cada mensagem
     const resultWithSender = await Promise.all(result.map(async (msg) => {
-      const [userResult] = await pool.query('SELECT nome, tipo FROM usuarios WHERE id = $1', [msg.remetenteId]);
-      const user = userResult[0] || {};
+      const userResult = await pool.query('SELECT nome, tipo FROM usuarios WHERE id = $1', [msg.remetenteId]);
+      const user = userResult.rows[0] || {};
       return {
         ...msg,
         remetenteNome: user.nome,
@@ -90,30 +90,30 @@ router.get('/conversas', authMiddleware, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const [rows] = await pool.query(`
+    const result = await pool.query(`
       SELECT DISTINCT
-        m.servicoId,
-        m.propostaId,
-        m.destinatarioId,
-        m.remetenteId,
+        m."servicoId",
+        m."propostaId",
+        m."destinatarioId",
+        m."remetenteId",
         s.titulo as servicoTitulo,
         CASE
-          WHEN m.destinatarioId = $1 THEN m.remetenteId
-          ELSE m.destinatarioId
+          WHEN m."destinatarioId" = $1 THEN m."remetenteId"
+          ELSE m."destinatarioId"
         END as outroUsuarioId,
         u.nome as outroUsuarioNome,
         u.tipo as outroUsuarioTipo,
-        (SELECT mensagem FROM mensagens WHERE servicoId = m.servicoId AND propostaId = m.propostaId ORDER BY created_at DESC LIMIT 1) as ultimaMensagem,
-        (SELECT created_at FROM mensagens WHERE servicoId = m.servicoId AND propostaId = m.propostaId ORDER BY created_at DESC LIMIT 1) as ultimaMensagemData,
-        (SELECT COUNT(*) FROM mensagens WHERE servicoId = m.servicoId AND destinatarioId = $2 AND lida = FALSE) as msgsNaoLidas
-      FROM mensagens m
-      LEFT JOIN servicos s ON m.servicoId = s.id
-      LEFT JOIN usuarios u ON u.id = CASE WHEN m.destinatarioId = $3 THEN m.remetenteId ELSE m.destinatarioId END
-      WHERE m.remetenteId = $4 OR m.destinatarioId = $5
+        (SELECT mensagem FROM "mensagens" WHERE "servicoId" = m."servicoId" AND "propostaId" = m."propostaId" ORDER BY created_at DESC LIMIT 1) as ultimaMensagem,
+        (SELECT created_at FROM "mensagens" WHERE "servicoId" = m."servicoId" AND "propostaId" = m."propostaId" ORDER BY created_at DESC LIMIT 1) as ultimaMensagemData,
+        (SELECT COUNT(*) FROM "mensagens" WHERE "servicoId" = m."servicoId" AND "destinatarioId" = $2 AND lida = FALSE) as msgsNaoLidas
+      FROM "mensagens" m
+      LEFT JOIN "servicos" s ON m."servicoId" = s.id
+      LEFT JOIN "usuarios" u ON u.id = CASE WHEN m."destinatarioId" = $3 THEN m."remetenteId" ELSE m."destinatarioId" END
+      WHERE m."remetenteId" = $4 OR m."destinatarioId" = $5
       ORDER BY ultimaMensagemData DESC
     `, [userId, userId, userId, userId, userId]);
 
-    res.json(rows);
+    res.json(result.rows);
   } catch (err) {
     console.log('Erro ao buscar conversas:', err);
     res.status(500).json({ error: 'Erro ao buscar conversas' });

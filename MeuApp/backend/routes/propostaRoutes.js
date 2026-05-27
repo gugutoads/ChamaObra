@@ -29,7 +29,7 @@ router.post('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
-    const [rows] = await pool.query(
+    const result = await pool.query(
       `SELECT p."id", p."servicoId", p."prestadorId", p."valor", p."prazo", p."descricao", p."status", p."data_agendada", p."horario_agendado", p."criado_em",
               u.nome as prestadorNome,
               u.servico as prestadorServico,
@@ -45,7 +45,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
        WHERE p.id = $1`,
       [id]
     );
-    res.json(rows[0] || null);
+    res.json(result.rows[0] || null);
   } catch (err) {
     console.error('Erro ao buscar proposta:', err);
     res.status(500).json({ error: 'Erro ao buscar proposta' });
