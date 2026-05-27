@@ -1,16 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../database');
-const { servicos } = require('../database/schema');
+const { servicos, propostas, mensagens } = require('../database/schema');
 const { eq, desc } = require('drizzle-orm');
 const authMiddleware = require('../middlewares/auth');
 
 router.delete('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
+  const servicoId = parseInt(id);
   console.log('=== DELETE RECEBIDO PARA ID:', id);
 
   try {
-    await db.delete(servicos).where(eq(servicos.id, parseInt(id)));
+    // Primeiro deleta mensagens vinculadas ao serviço
+    await db.delete(mensagens).where(eq(mensagens.servicoId, servicoId));
+    // Depois deleta propostas vinculadas ao serviço
+    await db.delete(propostas).where(eq(propostas.servicoId, servicoId));
+    // Por fim, deleta o serviço
+    await db.delete(servicos).where(eq(servicos.id, servicoId));
     res.json({ message: 'Serviço excluído!' });
   } catch (err) {
     console.log('=== ERRO NO DELETE:', err);
