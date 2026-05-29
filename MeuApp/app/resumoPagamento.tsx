@@ -14,6 +14,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { propostaRepository } from '../database/propostaRepository';
 import { pagamentoRepository } from '../database/pagamentoRepository';
+import { servicoRepository } from '../database/servicoRepository';
 
 const { width } = Dimensions.get('window');
 
@@ -193,7 +194,17 @@ export default function ResumoPagamento() {
                 [
                   {
                     text: 'OK',
-                    onPress: () => router.push('/homeContratante')
+                    onPress: async () => {
+                      try {
+                        // Update service status to 'INICIADA'
+                        const servicoId = proposta.servicoId;
+                        await servicoRepository.updateStatus(servicoId, 'INICIADA');
+                        router.push(`/servicoDetalhe?servicoId=${servicoId}`);
+                      } catch (error) {
+                        console.error('Erro ao atualizar status do serviço:', error);
+                        router.push('/homeContratante');
+                      }
+                    }
                   }
                 ]
               );

@@ -34,9 +34,16 @@ export default function MeusProjetos() {
 const loadProjects = async (id: number, tab: string) => {
   setLoading(true);
   try {
-    const status = tab === 'EM ANDAMENTO' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
-    const data = await servicoRepository.getByStatus(id, status);
-    setProjects(data);
+    if (tab === 'EM ANDAMENTO') {
+      const [emAndamento, iniciados] = await Promise.all([
+        servicoRepository.getByStatus(id, 'EM_ANDAMENTO'),
+        servicoRepository.getByStatus(id, 'INICIADA'),
+      ]);
+      setProjects([...emAndamento, ...iniciados]);
+    } else {
+      const data = await servicoRepository.getByStatus(id, 'CONCLUIDO');
+      setProjects(data);
+    }
   } catch (error) {
     console.error('Erro ao carregar projetos:', error);
   } finally {
@@ -95,9 +102,9 @@ const loadProjects = async (id: number, tab: string) => {
                   <View style={styles.cardContent}>
                     <View style={styles.titleRow}>
                       <Text style={styles.projectTitle}>{project.titulo}</Text>
-                      <View style={[styles.statusBadge, { backgroundColor: project.status === 'EM_ANDAMENTO' ? '#ff9800' : '#4caf50' }]}>
+                      <View style={[styles.statusBadge, { backgroundColor: project.status === 'CONCLUIDO' ? '#4caf50' : '#ff9800' }]}>
                         <Text style={styles.statusText}>
-                          {project.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : 'CONCLUÍDO'}
+                          {project.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : project.status === 'INICIADA' ? 'INICIADO' : 'CONCLUÍDO'}
                         </Text>
                       </View>
                     </View>

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../database/api';
 import { propostaRepository } from '../database/propostaRepository';
 import { servicoRepository } from '../database/servicoRepository';
+import WorkInProgressView from '../components/WorkInProgressView';
 
 export default function ServicoDetalheScreen() {
   const router = useRouter();
@@ -113,6 +114,20 @@ export default function ServicoDetalheScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+    );
+  }
+
+  // RENDER a tela de "Obra em Andamento" se o status for INICIADA
+  if (servico?.status === 'INICIADA') {
+    return (
+      <WorkInProgressView
+        servico={servico}
+        onBack={() => router.back()}
+        onChat={() => router.push(`/chat?servicoId=${id}`)}
+        onCancel={async () => {
+          setCancelModalVisible(true);
+        }}
+      />
     );
   }
 

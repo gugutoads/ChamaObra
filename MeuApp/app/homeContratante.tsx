@@ -146,7 +146,10 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.primaryBtn}>
               <Text style={styles.primaryBtnText}>SOLICITAR ORÇAMENTO</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn}>
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => router.push('/perfilPrestador')}
+            >
               <Text style={styles.secondaryBtnText}>VER PERFIL</Text>
             </TouchableOpacity>
           </View>

@@ -41,6 +41,10 @@ export const servicoRepository = {
     });
     return data;
   },
+  updateStatus: async (id: number, status: string) => {
+    const { data } = await api.patch(`/servicos/${id}/status`, { status });
+    return data;
+  },
   cancel: async (id: number) => {
     const { data } = await api.patch(`/servicos/${id}/status`, { status: 'CANCELADO' });
     return data;
