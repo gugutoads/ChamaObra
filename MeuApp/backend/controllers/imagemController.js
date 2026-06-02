@@ -7,6 +7,12 @@ const uploadImages = async (files) => {
     return [];
   }
 
+  // Se Supabase não está configurado, retornar vazio
+  if (!supabase) {
+    console.warn('⚠️  Supabase não configurado. Upload de imagens desativado.');
+    return [];
+  }
+
   const uploadedUrls = [];
 
   for (const file of files) {
@@ -46,6 +52,11 @@ const uploadImages = async (files) => {
 
 // Deletar imagens do Supabase Storage
 const deleteImage = async (imageUrl) => {
+  if (!supabase) {
+    console.warn('⚠️  Supabase não configurado. Exclusão de imagens desativada.');
+    return false;
+  }
+
   try {
     // Extrair o caminho do arquivo da URL pública
     // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]

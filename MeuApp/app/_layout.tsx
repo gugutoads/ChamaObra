@@ -13,6 +13,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ animation: 'none' }}>
+        <Stack.Screen name="escolherTipo" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="homeContratante" options={{ headerShown: false }} />
         <Stack.Screen name="homePrestador" options={{ headerShown: false }} />

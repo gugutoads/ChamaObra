@@ -4,11 +4,18 @@ const { createClient } = require('@supabase/supabase-js');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️  Variáveis de ambiente do Supabase não configuradas');
-  console.warn('Configure SUPABASE_URL e SUPABASE_ANON_KEY em .env');
-}
+let supabase = null;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('✅ Supabase conectado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao conectar Supabase:', error.message);
+  }
+} else {
+  console.warn('⚠️  Supabase não está configurado');
+  console.warn('Configure SUPABASE_URL e SUPABASE_ANON_KEY em .env para usar Storage');
+}
 
 module.exports = { supabase };
