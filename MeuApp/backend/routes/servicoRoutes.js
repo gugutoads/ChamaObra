@@ -4,6 +4,8 @@ const { db } = require('../database');
 const { servicos, propostas, mensagens, pagamentos } = require('../database/schema');
 const { eq, desc } = require('drizzle-orm');
 const authMiddleware = require('../middlewares/auth');
+const { upload } = require('../middlewares/uploadMiddleware');
+const { uploadImages } = require('../controllers/imagemController');
 
 router.delete('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
@@ -74,26 +76,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', authMiddleware, async (req, res) => {
-  const { titulo, descricao, metragem, categoria, urgencia, materiais, endereco, valor, fotos } = req.body;
+router.post('/', authMiddleware, upload.array('fotos', 10), async (req, res) => {
+  const { titulo, descricao, metragem, categoria, urgencia, materiais, endereco, valor } = req.body;
   const clienteId = req.userId;
+  const files = req.files || [];
 
   console.log('=== DADOS RECEBIDOS NO BACKEND ===');
   console.log('titulo:', titulo);
-  console.log('fotos:', fotos);
-  console.log('tipo fotos:', typeof fotos);
+  console.log('número de imagens:', files.length);
 
   try {
-    let fotosParaSalvar;
-    if (typeof fotos === 'string') {
-      fotosParaSalvar = fotos;
-    } else if (Array.isArray(fotos)) {
-      fotosParaSalvar = JSON.stringify(fotos);
-    } else {
-      fotosParaSalvar = null;
+    // Fazer upload das imagens para Supabase Storage
+    let fotosParaSalvar = null;
+    if (files && files.length > 0) {
+      const fotosUrls = await uploadImages(files);
+      if (fotosUrls.length > 0) {
+        fotosParaSalvar = JSON.stringify(fotosUrls);
+        console.log('URLs salvas:', fotosParaSalvar);
+      }
     }
-
-    console.log('fotos para salvar:', fotosParaSalvar);
 
     const result = await db.insert(servicos).values({
       clienteId,
@@ -109,10 +110,14 @@ router.post('/', authMiddleware, async (req, res) => {
       fotos: fotosParaSalvar,
     });
 
-    res.status(201).json({ id: result.insertId, message: 'Serviço criado!' });
+    res.status(201).json({ 
+      id: result.insertId, 
+      message: 'Serviço criado com sucesso!',
+      fotosCount: files.length
+    });
   } catch (err) {
     console.error('Erro ao criar serviço:', err);
-    res.status(500).json({ error: 'Erro ao criar serviço' });
+    res.status(500).json({ error: 'Erro ao criar serviço', detail: err.message });
   }
 });
 
