@@ -1,10 +1,11 @@
-export type TipoUsuario = 'contratante' | 'prestador';
+export type TipoUsuario = 'cliente' | 'prestador';
 
 export interface Usuario {
   id?: number;
 
   nome: string;
   email: string;
+  telefone?: string;
   cpf?: string;
   senha: string;
 

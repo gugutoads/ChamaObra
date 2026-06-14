@@ -2,13 +2,15 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'r
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 
 export default function EscolherTipo() {
   const router = useRouter();
   const [tipoSelecionado, setTipoSelecionado] = useState<'cliente' | 'prestador' | null>(null);
 
-  const handleProximo = () => {
+  const handleProximo = async () => {
     if (tipoSelecionado) {
+      await SecureStore.setItemAsync('user_role', tipoSelecionado);
       router.replace('/'); // Navega para tela de login (index.tsx)
     }
   };

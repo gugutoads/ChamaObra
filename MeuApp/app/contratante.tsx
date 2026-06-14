@@ -1,19 +1,27 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  CheckBox
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cadastrarUsuario } from '../database/userService';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CadastroScreen() {
   const router = useRouter();
 
-  const [tipo, setTipo] = useState<'cliente' | 'prestador'>('cliente');
   const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
-  const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [endereco, setEndereco] = useState('');
+  const [agree, setAgree] = useState(false);
 
   const cadastrar = async () => {
     if (senha !== confirmarSenha) {
@@ -21,13 +29,17 @@ export default function CadastroScreen() {
       return;
     }
 
+    if (!agree) {
+      alert('Você deve aceitar os Termos de Serviço e a Política de Privacidade');
+      return;
+    }
+
     const resultado = await cadastrarUsuario({
       nome,
       email,
-      cpf,
+      telefone,
       senha,
       tipo: 'cliente',
-      endereco,
     });
 
     if (!resultado.sucesso) {
@@ -35,81 +47,188 @@ export default function CadastroScreen() {
       return;
     }
 
-    alert('Conta criada 🔥');
-    router.push('/');
+    alert('Conta criada com sucesso! 🔥 Agora vamos completar seu perfil.');
+    router.replace('/perfilContratante');
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>🛠️</Text>
-        <Text style={styles.title}>Junte-se à maior rede de</Text>
-        <Text style={styles.highlight}>profissionais.</Text>
-      </View>
-
-      <Text style={styles.labelTop}>Você é:</Text>
-      <View style={styles.tipoContainer}>
-        <TouchableOpacity
-          style={[styles.tipoBox, tipo === 'cliente' && styles.tipoAtivo]}
-          onPress={() => setTipo('cliente')}
-        >
-          <Text>Contratante</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tipoBox, tipo === 'prestador' && styles.tipoAtivo]}
-          onPress={() => {
-            router.push('/prestador?tipo=prestador');
-          }}
-        >
-          <Text>Prestador de serviço</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.label}>NOME COMPLETO</Text>
-      <TextInput style={styles.input} placeholder="Como deseja ser chamado" value={nome} onChangeText={setNome} />
-
-      <Text style={styles.label}>EMAIL</Text>
-      <TextInput style={styles.input} placeholder="seu@email.com" value={email} onChangeText={setEmail} />
-
-      <Text style={styles.label}>CPF</Text>
-      <TextInput style={styles.input} placeholder="000.000.000-00" value={cpf} onChangeText={setCpf} />
-
-      <Text style={styles.label}>SENHA</Text>
-      <TextInput style={styles.input} secureTextEntry value={senha} onChangeText={setSenha} />
-
-      <Text style={styles.label}>CONFIRMAR SENHA</Text>
-      <TextInput style={styles.input} secureTextEntry value={confirmarSenha} onChangeText={setConfirmarSenha} />
-
-      <Text style={styles.label}>ENDEREÇO</Text>
-      <TextInput style={styles.input} placeholder="Rua, número e bairro" value={endereco} onChangeText={setEndereco} />
-
-      <TouchableOpacity style={styles.button} onPress={cadastrar}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/')}>
-        <Text style={styles.loginLink}>Já possui uma conta? Entre aqui</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Cadastro</Text>
+
+        <View style={styles.form}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>FULL NAME</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="John Doe"
+              value={nome}
+              onChangeText={setNome}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>PHONE NUMBER</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="+1 (555) 000-0000"
+              keyboardType="phone-pad"
+              value={telefone}
+              onChangeText={setTelefone}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>EMAIL ADDRESS</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="john@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>PASSWORD</Text>
+            <TextInput
+              style={styles.input}
+              secureTextEntry
+              placeholder="********"
+              value={senha}
+              onChangeText={setSenha}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>CONFIRM</Text>
+            <TextInput
+              style={styles.input}
+              secureTextEntry
+              placeholder="********"
+              value={confirmarSenha}
+              onChangeText={setConfirmarSenha}
+            />
+          </View>
+
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity
+              style={[styles.checkbox, agree && styles.checkboxChecked]}
+              onPress={() => setAgree(!agree)}
+            >
+              {agree && <Ionicons name="checkmark" size={16} color="#fff" />}
+            </TouchableOpacity>
+            <Text style={styles.checkboxText}>
+              I agree to the <Text style={styles.link}>Terms of Service</Text> and <Text style={styles.link}>Privacy Policy</Text>.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={cadastrar}>
+            <Text style={styles.buttonText}>Create Account</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#f5f0eb' },
-  header: { alignItems: 'center', marginBottom: 20 },
-  logo: { fontSize: 30 },
-  title: { fontSize: 18, textAlign: 'center' },
-  highlight: { fontSize: 18, fontWeight: 'bold', color: '#007bff' },
-  labelTop: { marginBottom: 10, fontWeight: 'bold' },
-  tipoContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  tipoBox: { flex: 1, padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', marginRight: 10, alignItems: 'center', backgroundColor: '#fff' },
-  tipoAtivo: { borderColor: '#ff6600' },
-  label: { marginTop: 10, fontSize: 12, color: 'gray' },
-  input: { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginTop: 5 },
-  button: { backgroundColor: '#ff6600', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 20 },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  loginLink: { textAlign: 'center', marginTop: 15, color: '#007bff' },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 20
+  },
+  backButton: {
+    marginTop: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    textAlign: 'center',
+    marginVertical: 40
+  },
+  form: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+    padding: 20,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
+  },
+  inputGroup: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 10,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#888',
+    marginBottom: 8,
+    textTransform: 'uppercase'
+  },
+  input: {
+    fontSize: 16,
+    color: '#333',
+    paddingVertical: 8,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 25,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#ff6600',
+    borderColor: '#ff6600',
+  },
+  checkboxText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  link: {
+    color: '#ff6600',
+    fontWeight: 'bold',
+  },
+  button: {
+    backgroundColor: '#ff6600',
+    padding: 18,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginRight: 10
+  },
 });

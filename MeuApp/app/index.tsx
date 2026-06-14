@@ -2,14 +2,24 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { loginUsuario } from '../database/authService';
+import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadRole() {
+      const role = await SecureStore.getItemAsync('user_role');
+      setUserRole(role);
+    }
+    loadRole();
+  }, []);
 
   const handleLogin = async () => {
     const resultado = await loginUsuario(email, senha);
@@ -53,7 +63,7 @@ export default function LoginScreen() {
 
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Ainda não tem uma conta?</Text>
-          <TouchableOpacity onPress={() => router.push('/contratante')}>
+          <TouchableOpacity onPress={() => router.push(userRole === 'prestador' ? '/prestador' : '/contratante')}>
             <Text style={styles.signupLink}>Criar conta</Text>
           </TouchableOpacity>
         </View>

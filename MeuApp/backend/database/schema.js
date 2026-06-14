@@ -5,8 +5,9 @@ const usuarios = pgTable('usuarios', {
   nome: varchar('nome', { length: 100 }),
   email: varchar('email', { length: 100 }).notNull(),
   senha: varchar('senha', { length: 255 }).notNull(),
+  telefone: varchar('telefone', { length: 20 }),
   cpf: varchar('cpf', { length: 20 }),
-  tipo: varchar('tipo', { length: 20 }).notNull(), // 'contratante' ou 'prestador'
+  tipo: varchar('tipo', { length: 20 }).notNull(), // 'cliente' ou 'prestador'
   endereco: text('endereco'),
   servico: text('servico'),
   experiencia: text('experiencia'),
