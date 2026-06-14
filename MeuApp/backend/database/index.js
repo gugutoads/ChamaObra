@@ -20,4 +20,18 @@ const pool = new Pool({
 
 const db = drizzle(pool);
 
+// 🔥 SISTEMA DE AUTO-CURA: Adiciona a coluna telefone se ela não existir
+async function migrateDatabase() {
+  try {
+    console.log('SISTEMA: Verificando atualizações do banco de dados...');
+    // O comando 'IF NOT EXISTS' evita erro se a coluna já existir
+    await pool.query('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone VARCHAR(20);');
+    console.log('SISTEMA: Banco de dados atualizado com sucesso!');
+  } catch (err) {
+    console.error('SISTEMA ERRO NA MIGRAÇÃO:', err.message);
+  }
+}
+
+migrateDatabase();
+
 module.exports = { db, pool };
