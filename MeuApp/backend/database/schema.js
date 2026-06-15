@@ -11,6 +11,7 @@ const usuarios = pgTable('usuarios', {
   endereco: text('endereco'),
   servico: text('servico'),
   experiencia: text('experiencia'),
+  photo: text('photo'),
 });
 
 const servicos = pgTable('servicos', {

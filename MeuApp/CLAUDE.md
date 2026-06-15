@@ -109,7 +109,6 @@ Cada fluxo possui telas e funcionalidades específicas.
 # FLUXO DO CLIENTE
 
 ## OBJETIVO DO CLIENTE
-
 O cliente entra no app para:
 - resolver um problema
 - encontrar profissionais
@@ -231,7 +230,6 @@ Perfil fica no avatar superior.
 # FLUXO DO PRESTADOR
 
 ## OBJETIVO DO PRESTADOR
-
 O prestador entra no app para:
 - encontrar serviços
 - enviar propostas
@@ -452,6 +450,102 @@ Sem imagem/referência, Claude NÃO deve inventar layouts completos.
 
 ## Status dinâmico
 - importante para sensação de produto vivo
+
+---
+
+# ARQUITETURA TÉCNICA
+
+## INFRAESTRUTURA
+- **Backend:** Node.js com Express, hospedado na Vercel.
+- **Banco de Dados:** Supabase (PostgreSQL).
+- **ORM:** Drizzle ORM para manipulação de dados e migrações.
+- **Storage:** Supabase Storage para armazenamento de imagens.
+- **Autenticação:** JWT (JSON Web Tokens) com bcryptjs para hashing de senhas.
+
+## MODELAGEM DO BANCO DE DADOS (Supabase)
+
+### 1. Tabela `usuarios`
+Armazena clientes e prestadores.
+- `id` (serial, PK)
+- `nome` (varchar)
+- `email` (varchar, UNIQUE)
+- `senha` (varchar)
+- `cpf` (varchar)
+- `tipo` (varchar: 'cliente' ou 'prestador')
+- `endereco` (text)
+- `servico` (text) - Específico para prestadores
+- `experiencia` (text) - Específico para prestadores
+- `telefone` (varchar)
+- `photo` (text) - URL da imagem no Storage
+
+### 2. Tabela `servicos`
+Trabalhos publicados pelos clientes.
+- `id` (serial, PK)
+- `clienteId` (integer, FK -> usuarios.id)
+- `titulo` (text)
+- `descricao` (text)
+- `metragem` (varchar)
+- `categoria` (varchar)
+- `urgencia` (varchar)
+- `materiais` (text)
+- `endereco` (text)
+- `status` (varchar: 'EM_ANDAMENTO', 'CONCLUIDO', etc.)
+- `valor` (decimal)
+- `fotos` (json) - Array de URLs do Storage
+
+### 3. Tabela `propostas`
+Propostas enviadas por prestadores para serviços.
+- `id` (serial, PK)
+- `servicoId` (integer, FK -> servicos.id)
+- `prestadorId` (integer, FK -> usuarios.id)
+- `valor` (decimal)
+- `prazo` (varchar)
+- `descricao` (text)
+- `status` (varchar: 'PENDENTE', 'ACEITA', 'RECUSADA')
+- `data_agendada` (date)
+- `horario_agendado` (varchar)
+
+### 4. Tabela `mensagens`
+Histórico de chat entre cliente e prestador.
+- `id` (serial, PK)
+- `servicoId` (integer, FK -> servicos.id)
+- `propostaId` (integer, FK -> propostas.id, opcional)
+- `remetenteId` (integer, FK -> usuarios.id)
+- `destinatarioId` (integer, FK -> usuarios.id)
+- `mensagem` (text)
+- `lida` (boolean)
+- `created_at` (timestamp)
+
+### 5. Tabela `pagamentos`
+Controle financeiro e Escrow.
+- `id` (serial, PK)
+- `propostaId` (integer, FK -> propostas.id)
+- `valor` (decimal)
+- `status` (varchar: 'PENDENTE', 'PAGO', 'DISPONIVEL', 'LIBERADO')
+- `metodo_pagamento` (varchar: 'ESCROW', etc.)
+- `data_pagamento` (timestamp)
+- `data_criacao` (timestamp)
+
+## LÓGICA DE FUNCIONAMENTO (Fluxo de Dados)
+
+1. **Autenticação**:
+   - Login/Registro via `/auth` $\rightarrow$ Validação de senha com `bcrypt` $\rightarrow$ Geração de JWT $\rightarrow$ Token enviado ao app.
+   - Rotas protegidas usam o middleware `auth` para validar o token e extrair o `userId`.
+
+2. **Publicação de Serviço**:
+   - Cliente envia dados e fotos $\rightarrow$ Fotos são enviadas para o Supabase Storage via `imagemController` $\rightarrow$ URLs são salvas como JSON na tabela `servicos`.
+
+3. **Ciclo de Propostas**:
+   - Prestador visualiza serviços $\rightarrow$ Envia proposta via `/proposta` $\rightarrow$ Salvo na tabela `propostas` com status 'PENDENTE'.
+
+4. **Negociação e Chat**:
+   - Mensagens vinculadas ao `servicoId` e opcionalmente à `propostaId` $\rightarrow$ Persistidas na tabela `mensagens`.
+
+5. **Contratação e Pagamento**:
+   - Cliente aceita proposta $\rightarrow$ Status da proposta muda para 'ACEITA' $\rightarrow$ Cria-se um registro em `pagamentos` com status 'PENDENTE' (Escrow).
+
+6. **Conclusão**:
+   - Prestador marca serviço como concluído $\rightarrow$ Cliente confirma $\rightarrow$ Status do pagamento muda para 'LIBERADO' $\rightarrow$ Valor disponibilizado para o prestador.
 
 ---
 
