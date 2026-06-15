@@ -71,10 +71,9 @@ export default function PerfilContratanteScreen() {
       endereco,
     };
 
-    // Se houve mudança na foto, adicionamos o arquivo para upload
-    if (photo) {
-      // Aqui estamos simplificando: enviamos o URI como photoFile
-      // Em um app real, pegaríamos os detalhes do arquivo
+    // Só enviamos a foto se ela for um arquivo local (URI do ImagePicker)
+    // e não uma URL do servidor (http/https)
+    if (photo && !photo.startsWith('http')) {
       dadosParaSalvar.photoFile = {
         uri: photo,
         name: 'profile.jpg',
@@ -83,6 +82,7 @@ export default function PerfilContratanteScreen() {
     }
 
     const resultado = await atualizarUsuario(dadosParaSalvar);
+
 
     if (resultado.sucesso) {
       carregarPerfil();

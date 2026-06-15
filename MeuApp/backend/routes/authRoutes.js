@@ -131,13 +131,18 @@ router.post('/update', auth, upload.single('photo'), async (req, res) => {
       photoUrl = req.body.photo;
     }
 
+    const updateData = {
+      nome: nome || null,
+      telefone: telefone || null,
+      endereco: endereco || null,
+    };
+
+    if (photoUrl) {
+      updateData.photo = photoUrl;
+    }
+
     await db.update(usuarios)
-      .set({
-        nome: nome || null,
-        telefone: telefone || null,
-        endereco: endereco || null,
-        photo: photoUrl || null, // Agora salvando a foto!
-      })
+      .set(updateData)
       .where(eq(usuarios.id, req.userId));
 
     res.json({ message: 'Perfil atualizado com sucesso!' });
