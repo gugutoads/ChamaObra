@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,37 +8,97 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { atualizarUsuario } from '../database/userService';
+import * as ImagePicker from 'expo-image-picker';
+import { atualizarUsuario, obterPerfilUsuario } from '../database/userService';
 
 export default function PerfilContratanteScreen() {
   const router = useRouter();
 
-  // Mock data for initial state
-  const [nome, setNome] = useState('Alex Miller');
-  const [email, setEmail] = useState('alex.miller@email.com');
-  const [telefone, setTelefone] = useState('+55 11 99999-9999');
-  const [endereco, setEndereco] = useState('Rua, número, bairro...');
-  const [photo, setPhoto] = useState('https://randomuser.me/api/portraits/men/32.jpg');
-  const [tfaEnabled, setTfaEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [tfaEnabled, setTfaEnabled] = useState(false);
 
-  const handleSave = async () => {
-    const resultado = await atualizarUsuario({
-      nome,
-      email,
-      telefone,
-      endereco
+  useEffect(() => {
+    carregarPerfil();
+  }, []);
+
+  const carregarPerfil = async () => {
+    try {
+      const resultado = await obterPerfilUsuario();
+      if (resultado.sucesso) {
+        const user = resultado.usuario;
+        setNome(user.nome || '');
+        setEmail(user.email || '');
+        setTelefone(user.telefone || '');
+        setEndereco(user.endereco || '');
+        // Nota: Se o backend tiver campo de foto, usar user.photo.
+        // Por enquanto, mantemos vazio como solicitado.
+        setPhoto(user.photo || null);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const escolherFoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 1,
     });
 
+    if (!result.canceled) {
+      setPhoto(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = async () => {
+    const dadosParaSalvar = {
+      nome,
+      telefone,
+      endereco,
+    };
+
+    // Se houve mudança na foto, adicionamos o arquivo para upload
+    if (photo) {
+      // Aqui estamos simplificando: enviamos o URI como photoFile
+      // Em um app real, pegaríamos os detalhes do arquivo
+      dadosParaSalvar.photoFile = {
+        uri: photo,
+        name: 'profile.jpg',
+        type: 'image/jpeg'
+      };
+    }
+
+    const resultado = await atualizarUsuario(dadosParaSalvar);
+
     if (resultado.sucesso) {
+      carregarPerfil();
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
     } else {
       Alert.alert('Erro', resultado.mensagem);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#ff6600" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -46,7 +106,7 @@ export default function PerfilContratanteScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Client Profile</Text>
+        <Text style={styles.headerTitle}>Meu Perfil</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Ionicons name="ellipsis-vertical" size={24} color="#333" />
         </TouchableOpacity>
@@ -54,48 +114,54 @@ export default function PerfilContratanteScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileImageContainer}>
-          <Image source={{ uri: photo }} style={styles.profileImage} />
-          <TouchableOpacity style={styles.cameraButton}>
+          <Image
+            source={photo ? { uri: photo } : { uri: 'https://cdn-icons-png.flaticon.com/512/1491/1491009.png' }}
+            style={styles.profileImage}
+          />
+          <TouchableOpacity style={styles.cameraButton} onPress={escolherFoto}>
             <Ionicons name="camera" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.userName}>{nome}</Text>
-        <Text style={styles.userSubtitle}>Premium Client • Member since 2023</Text>
+        <Text style={styles.userName}>{nome || 'Usuário'}</Text>
+        <Text style={styles.userSubtitle}>Contratante</Text>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>FULL NAME</Text>
+            <Text style={styles.label}>NOME COMPLETO</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 value={nome}
                 onChangeText={setNome}
+                placeholder="Seu nome completo"
               />
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>EMAIL ADDRESS</Text>
+            <Text style={styles.label}>EMAIL</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: '#999' }]}
                 value={email}
-                onChangeText={setEmail}
+                editable={false} // Email geralmente não é editável
               />
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>PHONE NUMBER</Text>
+            <Text style={styles.label}>TELEFONE</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="call-outline" size={20} color="#888" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 value={telefone}
                 onChangeText={setTelefone}
+                placeholder="(00) 00000-0000"
+                keyboardType="phone-pad"
               />
             </View>
           </View>
@@ -108,20 +174,21 @@ export default function PerfilContratanteScreen() {
                 style={styles.input}
                 value={endereco}
                 onChangeText={setEndereco}
+                placeholder="Rua, número, bairro..."
               />
             </View>
           </View>
 
           <View style={styles.securityCard}>
             <View style={styles.securityTextContainer}>
-              <Text style={styles.securityTitle}>ACCOUNT SECURITY</Text>
-              <Text style={styles.securitySubtitle}>Two-Factor Authentication</Text>
+              <Text style={styles.securityTitle}>SEGURANÇA DA CONTA</Text>
+              <Text style={styles.securitySubtitle}>Autenticação de Dois Fatores</Text>
             </View>
             <TouchableOpacity
               style={[styles.tfaToggle, !tfaEnabled && styles.tfaToggleDisabled]}
               onPress={() => setTfaEnabled(!tfaEnabled)}
             >
-              <Text style={styles.tfaToggleText}>{tfaEnabled ? 'ENABLED' : 'DISABLED'}</Text>
+              <Text style={styles.tfaToggleText}>{tfaEnabled ? 'ATIVADO' : 'DESATIVADO'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -139,6 +206,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fdfdfd',
     paddingHorizontal: 20
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fdfdfd'
   },
   header: {
     flexDirection: 'row',

@@ -3,15 +3,29 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image,
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import api from '../database/api';
+import { obterPerfilUsuario } from '../database/userService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [prestadores, setPrestadores] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [busca, setBusca] = useState('');
 
   useEffect(() => {
     carregarPrestadores();
+    carregarPerfil();
   }, []);
+
+  const carregarPerfil = async () => {
+    try {
+      const resultado = await obterPerfilUsuario();
+      if (resultado.sucesso) {
+        setUser(resultado.usuario);
+      }
+    } catch (error) {
+      console.log('Erro ao carregar perfil:', error);
+    }
+  };
 
   const carregarPrestadores = async () => {
     try {
@@ -40,10 +54,12 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.notificationBtn}>
             <Ionicons name="notifications-outline" size={24} color="#333" />
           </TouchableOpacity>
-          <Image
-            source={{ uri: 'https://i.pravatar.cc/100' }}
-            style={styles.avatar}
-          />
+          <TouchableOpacity onPress={() => router.push('/perfilContratante')}>
+            <Image
+              source={{ uri: user?.photo || 'https://i.pravatar.cc/100' }}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 

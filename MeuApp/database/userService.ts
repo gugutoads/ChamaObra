@@ -1,10 +1,17 @@
 import api from './api';
 import { Usuario } from './types';
-import { Partial } from 'typescript'; // Simplified for example, in real TS we use Partial<Usuario>
+
+export const obterPerfilUsuario = async () => {
+  try {
+    const response = await api.get('/auth/me');
+    return { sucesso: true, usuario: response.data.user };
+  } catch (error: any) {
+    return { sucesso: false, mensagem: error.response?.data?.error || 'Erro ao buscar perfil' };
+  }
+};
 
 export const cadastrarUsuario = async (usuario: Usuario) => {
   try {
-    // Now only nome, email, and senha are mandatory for initial registration
     if (!usuario.nome || !usuario.email || !usuario.senha) {
       return { sucesso: false, mensagem: 'Preencha os campos obrigatórios' };
     }
@@ -17,10 +24,31 @@ export const cadastrarUsuario = async (usuario: Usuario) => {
   }
 };
 
-export const atualizarUsuario = async (dados: Partial<Usuario>) => {
+export const atualizarUsuario = async (dados: any) => {
   try {
-    // We assume the user is logged in and the API handles the user ID via token/session
-    await api.put('/user/update', dados);
+    let requestData = dados;
+
+    if (dados.photoFile) {
+      const formData = new FormData();
+      Object.keys(dados).forEach(key => {
+        if (key === 'photoFile') {
+          formData.append('photo', {
+            uri: dados.photoFile.uri,
+            name: dados.photoFile.name || 'profile.jpg',
+            type: dados.photoFile.type || 'image/jpeg',
+          });
+        } else {
+          formData.append(key, dados[key]);
+        }
+      });
+      requestData = formData;
+    }
+
+    await api.post('/auth/update', requestData, {
+      headers: {
+        'Content-Type': requestData instanceof FormData ? 'multipart/form-data' : 'application/json',
+      },
+    });
     return { sucesso: true };
   } catch (error: any) {
     const mensagem = error.response?.data?.error || 'Erro ao atualizar perfil';

@@ -17,7 +17,6 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/servicos', require('./routes/servicoRoutes'));
 app.use('/api/propostas', require('./routes/propostaRoutes'));
-app.use('/api/usuarios', require('./routes/authRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/pagamentos', require('./routes/pagamentoRoutes'));
 
@@ -58,7 +57,9 @@ app.get('/api/setup', async (req, res) => {
         "tipo" VARCHAR(20) NOT NULL,
         "endereco" TEXT,
         "servico" TEXT,
-        "experiencia" TEXT
+        "experiencia" TEXT,
+        "telefone" VARCHAR(20),
+        "photo" TEXT
       );
 
       CREATE TABLE "servicos" (

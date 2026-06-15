@@ -5,6 +5,9 @@ const { usuarios } = require('../database/schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { eq, and } = require('drizzle-orm');
+const auth = require('../middlewares/auth');
+const { upload } = require('../middlewares/uploadMiddleware');
+const { uploadImages } = require('../controllers/imagemController');
 
 router.get('/prestadores', async (req, res) => {
   try {
@@ -95,6 +98,52 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Erro no login:', err);
     res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// --- NOVAS ROTAS DE PERFIL ---
+
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await db.select().from(usuarios).where(eq(usuarios.id, req.userId));
+    if (user.length === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+    res.json({ user: user[0] });
+  } catch (err) {
+    console.error('Erro ao buscar perfil:', err);
+    res.status(500).json({ error: 'Erro interno ao buscar perfil' });
+  }
+});
+
+router.post('/update', auth, upload.single('photo'), async (req, res) => {
+  try {
+    const { nome, email, telefone, endereco } = req.body;
+    let photoUrl = null;
+
+    if (req.file) {
+      const images = await uploadImages([req.file]);
+      if (images.length > 0) {
+        photoUrl = images[0];
+      }
+    }
+
+    if (!photoUrl && req.body.photo) {
+      photoUrl = req.body.photo;
+    }
+
+    await db.update(usuarios)
+      .set({
+        nome: nome || null,
+        telefone: telefone || null,
+        endereco: endereco || null,
+        photo: photoUrl || null, // Agora salvando a foto!
+      })
+      .where(eq(usuarios.id, req.userId));
+
+    res.json({ message: 'Perfil atualizado com sucesso!' });
+  } catch (err) {
+    console.error('Erro ao atualizar perfil:', err);
+    res.status(500).json({ error: 'Erro interno ao atualizar perfil' });
   }
 });
 
