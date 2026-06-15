@@ -29,6 +29,10 @@ export interface Servico {
   urgencia: string;
   materiais: string;
   endereco: string;
+  cep?: string;
+  numero?: string;
+  complemento?: string;
+  tipoImovel?: string;
   status: 'EM_ANDAMENTO' | 'CONCLUIDO';
   valor?: number;
   fotos?: string[];

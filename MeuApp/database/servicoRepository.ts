@@ -1,6 +1,6 @@
 import api from './api';
 import { Servico } from './types';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export const servicoRepository = {
   insert: async (servico: Omit<Servico, 'id' | 'criado_em'>) => {
@@ -15,6 +15,10 @@ export const servicoRepository = {
     formData.append('urgencia', servico.urgencia || '');
     formData.append('materiais', servico.materiais || '');
     formData.append('endereco', servico.endereco || '');
+    formData.append('cep', servico.cep || '');
+    formData.append('numero', servico.numero || '');
+    formData.append('complemento', servico.complemento || '');
+    formData.append('tipoImovel', servico.tipoImovel || '');
     formData.append('status', servico.status || 'EM_ANDAMENTO');
     if (servico.valor) {
       formData.append('valor', String(servico.valor));

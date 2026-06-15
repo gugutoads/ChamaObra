@@ -24,6 +24,10 @@ const servicos = pgTable('servicos', {
   urgencia: varchar('urgencia', { length: 50 }),
   materiais: text('materiais'),
   endereco: text('endereco'),
+  cep: varchar('cep', { length: 20 }),
+  numero: varchar('numero', { length: 20 }),
+  complemento: varchar('complemento', { length: 100 }),
+  tipoImovel: varchar('tipoImovel', { length: 50 }),
   status: varchar('status', { length: 20 }).default('EM_ANDAMENTO'), // 'EM_ANDAMENTO' ou 'CONCLUIDO'
   valor: decimal('valor', { precision: 10, scale: 2 }),
   fotos: json('fotos'),
