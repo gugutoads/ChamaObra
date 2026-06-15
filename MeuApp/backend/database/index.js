@@ -24,8 +24,9 @@ const db = drizzle(pool);
 async function migrateDatabase() {
   try {
     console.log('SISTEMA: Verificando atualizações do banco de dados...');
-    // O comando 'IF NOT EXISTS' evita erro se a coluna já existir
+    // Adiciona colunas essenciais se elas não existirem
     await pool.query('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone VARCHAR(20);');
+    await pool.query('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS photo TEXT;');
     console.log('SISTEMA: Banco de dados atualizado com sucesso!');
   } catch (err) {
     console.error('SISTEMA ERRO NA MIGRAÇÃO:', err.message);

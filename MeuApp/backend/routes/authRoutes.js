@@ -108,6 +108,7 @@ router.get('/me', auth, async (req, res) => {
     const user = await db.select().from(usuarios).where(eq(usuarios.id, req.userId));
     if (user.length === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
 
+    console.log('SISTEMA-LOG: Retornando perfil do usuário:', user[0]);
     res.json({ user: user[0] });
   } catch (err) {
     console.error('Erro ao buscar perfil:', err);
@@ -121,14 +122,19 @@ router.post('/update', auth, upload.single('photo'), async (req, res) => {
     let photoUrl = null;
 
     if (req.file) {
+      console.log('SISTEMA-LOG: Arquivo recebido:', req.file.originalname);
       const images = await uploadImages([req.file]);
       if (images.length > 0) {
         photoUrl = images[0];
+        console.log('SISTEMA-LOG: Foto upload successful. URL:', photoUrl);
+      } else {
+        console.log('SISTEMA-LOG: Upload failed, no URL returned.');
       }
     }
 
     if (!photoUrl && req.body.photo) {
       photoUrl = req.body.photo;
+      console.log('SISTEMA-LOG: Usando URL de foto existente:', photoUrl);
     }
 
     const updateData = {
@@ -141,9 +147,14 @@ router.post('/update', auth, upload.single('photo'), async (req, res) => {
       updateData.photo = photoUrl;
     }
 
-    await db.update(usuarios)
+    console.log('SISTEMA-LOG: Salvando no banco dados:', updateData);
+
+    const result = await db.update(usuarios)
       .set(updateData)
-      .where(eq(usuarios.id, req.userId));
+      .where(eq(usuarios.id, req.userId))
+      .returning();
+
+    console.log('SISTEMA-LOG: Resultado do Update:', result);
 
     res.json({ message: 'Perfil atualizado com sucesso!' });
   } catch (err) {

@@ -51,7 +51,14 @@ export const atualizarUsuario = async (dados: any) => {
     });
     return { sucesso: true };
   } catch (error: any) {
-    const mensagem = error.response?.data?.error || 'Erro ao atualizar perfil';
+    let mensagem = 'Erro ao atualizar perfil';
+    if (error.response?.data?.error) {
+      mensagem = typeof error.response.data.error === 'string'
+        ? error.response.data.error
+        : JSON.stringify(error.response.data.error);
+    } else if (error.message) {
+      mensagem = error.message;
+    }
     return { sucesso: false, mensagem };
   }
 };
