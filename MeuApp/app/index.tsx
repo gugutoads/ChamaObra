@@ -31,10 +31,21 @@ export default function LoginScreen() {
 
     const usuario = resultado.usuario as any;
 
+    // Verifica se o perfil está incompleto (ex: falta endereço ou telefone)
+    const perfilIncompleto = !usuario.endereco || !usuario.telefone;
+
     if (usuario.tipo === 'prestador') {
-      router.replace('/homePrestador');
+      if (perfilIncompleto || !usuario.servico || !usuario.experiencia) {
+        router.replace('/perfilPrestador');
+      } else {
+        router.replace('/homePrestador');
+      }
     } else {
-      router.replace('/homeContratante');
+      if (perfilIncompleto) {
+        router.replace('/perfilContratante');
+      } else {
+        router.replace('/homeContratante');
+      }
     }
   };
 

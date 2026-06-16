@@ -47,8 +47,8 @@ export default function CadastroScreen() {
       return;
     }
 
-    alert('Conta criada com sucesso! 🔥 Agora vamos completar seu perfil.');
-    router.replace('/perfilContratante');
+    alert('Conta criada com sucesso! 🔥 Agora faça login para acessar seu perfil.');
+    router.replace('/');
   };
 
   return (

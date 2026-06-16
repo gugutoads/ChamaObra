@@ -27,7 +27,8 @@ router.get('/prestadores', async (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { nome, email, senha, cpf, tipo, endereco, servico, experiencia, telefone } = req.body;
+  let { nome, email, senha, cpf, tipo, endereco, servico, experiencia, telefone } = req.body;
+  if (email) email = email.toLowerCase().trim();
 
   console.log('LOG-SISTEMA: DADOS RECEBIDOS:', req.body);
 
@@ -66,7 +67,8 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-  const { email, senha } = req.body;
+  let { email, senha } = req.body;
+  if (email) email = email.toLowerCase().trim();
 
   try {
     const result = await db.select().from(usuarios).where(eq(usuarios.email, email));

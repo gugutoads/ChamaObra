@@ -26,7 +26,7 @@ export default function EnviarProposta() {
   const prazos = ['1 dia', '3 dias', '7 dias', '15 dias', '30 dias', 'A combinar'];
 
   const handleEnviar = () => {
-    if (!valor || parseFloat(valor) <= 0) {
+    if (!valor || parseFloat(valor) < 0) {
       Alert.alert('Erro', 'Por favor, informe um valor válido.');
       return;
     }
