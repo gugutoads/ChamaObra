@@ -27,7 +27,7 @@ const servicos = pgTable('servicos', {
   cep: varchar('cep', { length: 20 }),
   numero: varchar('numero', { length: 20 }),
   complemento: varchar('complemento', { length: 100 }),
-  tipoImovel: varchar('tipoImovel', { length: 50 }),
+  tipo_imovel: varchar('tipoimovel', { length: 50 }),
   status: varchar('status', { length: 20 }).default('EM_ANDAMENTO'), // 'EM_ANDAMENTO' ou 'CONCLUIDO'
   valor: decimal('valor', { precision: 10, scale: 2 }),
   fotos: json('fotos'),
