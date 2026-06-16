@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config(); // Garante que as variáveis do .env sejam carregadas
 // No Vercel, variáveis de ambiente já estão disponíveis via process.env
 
 // Importar banco para iniciar conexão
