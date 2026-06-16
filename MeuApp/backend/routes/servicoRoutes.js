@@ -40,9 +40,35 @@ router.get('/', async (req, res) => {
   try {
     let result;
     if (status) {
-      result = await db.select().from(servicos).where(eq(servicos.status, status));
+      result = await db.select({
+        id: servicos.id,
+        clienteId: servicos.clienteId,
+        titulo: servicos.titulo,
+        descricao: servicos.descricao,
+        metragem: servicos.metragem,
+        categoria: servicos.categoria,
+        urgencia: servicos.urgencia,
+        materiais: servicos.materiais,
+        endereco: servicos.endereco,
+        status: servicos.status,
+        valor: servicos.valor,
+        fotos: servicos.fotos,
+      }).from(servicos).where(eq(servicos.status, status));
     } else {
-      result = await db.select().from(servicos);
+      result = await db.select({
+        id: servicos.id,
+        clienteId: servicos.clienteId,
+        titulo: servicos.titulo,
+        descricao: servicos.descricao,
+        metragem: servicos.metragem,
+        categoria: servicos.categoria,
+        urgencia: servicos.urgencia,
+        materiais: servicos.materiais,
+        endereco: servicos.endereco,
+        status: servicos.status,
+        valor: servicos.valor,
+        fotos: servicos.fotos,
+      }).from(servicos);
     }
 
     const servicosComFotos = result.map(servico => {
@@ -105,10 +131,6 @@ router.post('/', authMiddleware, upload.array('fotos', 10), async (req, res) => 
       urgencia,
       materiais,
       endereco,
-      cep: req.body.cep || null,
-      numero: req.body.numero || null,
-      complemento: req.body.complemento || null,
-      tipoImovel: req.body.tipoImovel || null,
       status: 'EM_ANDAMENTO',
       valor: valor ?? null,
       fotos: fotosParaSalvar,
@@ -132,11 +154,37 @@ router.get('/cliente/:clienteId', authMiddleware, async (req, res) => {
   try {
     let result;
     if (status) {
-      result = await db.select().from(servicos)
+      result = await db.select({
+        id: servicos.id,
+        clienteId: servicos.clienteId,
+        titulo: servicos.titulo,
+        descricao: servicos.descricao,
+        metragem: servicos.metragem,
+        categoria: servicos.categoria,
+        urgencia: servicos.urgencia,
+        materiais: servicos.materiais,
+        endereco: servicos.endereco,
+        status: servicos.status,
+        valor: servicos.valor,
+        fotos: servicos.fotos,
+      }).from(servicos)
         .where(eq(servicos.clienteId, parseInt(clienteId)))
         .where(eq(servicos.status, status));
     } else {
-      result = await db.select().from(servicos)
+      result = await db.select({
+        id: servicos.id,
+        clienteId: servicos.clienteId,
+        titulo: servicos.titulo,
+        descricao: servicos.descricao,
+        metragem: servicos.metragem,
+        categoria: servicos.categoria,
+        urgencia: servicos.urgencia,
+        materiais: servicos.materiais,
+        endereco: servicos.endereco,
+        status: servicos.status,
+        valor: servicos.valor,
+        fotos: servicos.fotos,
+      }).from(servicos)
         .where(eq(servicos.clienteId, parseInt(clienteId)));
     }
 

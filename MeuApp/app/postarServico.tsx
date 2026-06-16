@@ -222,8 +222,8 @@ export default function PostarServico() {
   };
 
   const validateStep2 = () => {
-    if (!cep || !numero) {
-      Alert.alert('Atenção', 'Por favor, preencha o CEP e o número do endereço.');
+    if (!enderecoBusca) {
+      Alert.alert('Atenção', 'Por favor, insira o endereço ou utilize a localização.');
       return false;
     }
     if (!tipoImovel) {
@@ -261,7 +261,7 @@ export default function PostarServico() {
         categoria: categoriasSelecionadas.join(', '), // Enviando as múltiplas categorias como string separada por vírgula
         urgencia,
         materiais,
-        endereco: `${cep}, ${numero} ${complemento}`,
+        endereco: enderecoBusca,
         cep,
         numero,
         complemento,
@@ -400,20 +400,11 @@ export default function PostarServico() {
               </View>
 
               <View style={styles.autocompleteWrapper}>
-                <GooglePlacesAutocomplete
-                  placeholder="Buscar endereço..."
-                  onPress={handleAddressSelect}
+                <TextInput
+                  style={styles.autocompleteInput}
+                  placeholder="Buscar ou digitar endereço..."
+                  value={enderecoBusca}
                   onChangeText={handleEditableAddressChange}
-                  query={{
-                    key: 'AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY',
-                    language: 'pt-BR',
-                  }}
-                  fetchFetchDetails={true}
-                  styles={{
-                    textInput: styles.autocompleteInput,
-                    container: { flex: 0 },
-                    listView: styles.autocompleteList,
-                  }}
                 />
               </View>
 
