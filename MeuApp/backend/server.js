@@ -12,6 +12,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Webhook do Stripe DEVE vir antes do express.json() para receber o body bruto
+const { handleWebhook } = require('./controllers/stripeWebhookController');
+app.post('/api/pagamentos/webhook', express.raw({type: 'application/json'}), handleWebhook);
+
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/authRoutes'));

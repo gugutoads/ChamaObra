@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import api from '../database/api';
 import { propostaRepository } from '../database/propostaRepository';
 import { pagamentoRepository } from '../database/pagamentoRepository';
 import { servicoRepository } from '../database/servicoRepository';
@@ -186,31 +188,33 @@ export default function ResumoPagamento() {
 
             setProcessando(true);
             try {
-              await pagamentoRepository.create(proposta.id, proposta.valor);
+              const response = await api.post('/pagamentos/create-checkout-session', {
+                propostaId: proposta.id,
+                valor: proposta.valor
+              });
 
-              Alert.alert(
-                'Pagamento Realizado!',
-                'Seu pagamento foi processado com sucesso. O profissional foi notificado para iniciar o serviço.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: async () => {
-                      try {
-                        // Update service status to 'INICIADA'
+              const { url } = response.data;
+
+              if (url) {
+                await WebBrowser.openBrowserAsync(url);
+
+                Alert.alert(
+                  'Pagamento em Processamento',
+                  'Você será redirecionado para o Stripe. Após concluir o pagamento, volte ao app para acompanhar o status do seu serviço.',
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
                         const servicoId = proposta.servicoId;
-                        await servicoRepository.updateStatus(servicoId, 'INICIADA');
                         router.push(`/servicoDetalhe?servicoId=${servicoId}`);
-                      } catch (error) {
-                        console.error('Erro ao atualizar status do serviço:', error);
-                        router.push('/homeContratante');
                       }
                     }
-                  }
-                ]
-              );
+                  ]
+                );
+              }
             } catch (error) {
               console.error('Erro ao processar pagamento:', error);
-              Alert.alert('Erro', 'Houve um problema ao processar o pagamento. Tente novamente.');
+              Alert.alert('Erro', 'Houve um problema ao iniciar o pagamento. Tente novamente.');
             } finally {
               setProcessando(false);
             }

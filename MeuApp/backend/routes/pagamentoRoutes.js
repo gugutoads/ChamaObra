@@ -4,6 +4,19 @@ const { db, pool } = require('../database');
 const { pagamentos, propostas } = require('../database/schema');
 const { eq } = require('drizzle-orm');
 const authMiddleware = require('../middlewares/auth');
+const { createCheckoutSession } = require('../controllers/stripeController');
+
+router.post('/create-checkout-session', authMiddleware, async (req, res) => {
+  const { propostaId, valor } = req.body;
+
+  try {
+    const sessionUrl = await createCheckoutSession(propostaId, valor);
+    res.json({ url: sessionUrl });
+  } catch (err) {
+    console.error('Erro ao criar Checkout Session:', err);
+    res.status(500).json({ error: 'Erro ao processar pagamento com Stripe' });
+  }
+});
 
 router.post('/', authMiddleware, async (req, res) => {
   const { propostaId, valor, status, metodo_pagamento } = req.body;

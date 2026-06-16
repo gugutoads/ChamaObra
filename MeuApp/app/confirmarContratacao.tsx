@@ -67,39 +67,27 @@ export default function ConfirmarContratacao() {
     }
   }, [propostaId]);
 
-  const handleConfirm = () => {
-    Alert.alert(
-      'Confirmar Pagamento',
-      'Você está prestes a confirmar a contratação e realizar o pagamento via Escrow. Deseja continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            try {
-              const propostaIdNum = proposta?.id || 0;
+  const handleConfirm = async () => {
+    try {
+      const propostaIdNum = proposta?.id || 0;
 
-              // Format selected date as YYYY-MM-DD
-              const year = selectedDate.getFullYear();
-              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-              const day = String(selectedDate.getDate()).padStart(2, '0');
-              const dataFormatada = `${year}-${month}-${day}`;
+      // Format selected date as YYYY-MM-DD
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dataFormatada = `${year}-${month}-${day}`;
 
-              await propostaRepository.updateScheduling(propostaIdNum, dataFormatada, selectedSlot);
-              await propostaRepository.updateStatus(propostaIdNum, 'ACEITA');
+      await propostaRepository.updateScheduling(propostaIdNum, dataFormatada, selectedSlot);
+      await propostaRepository.updateStatus(propostaIdNum, 'ACEITA');
 
-              router.push({
-                pathname: '/resumoPagamento',
-                params: { propostaId: propostaIdNum }
-              });
-            } catch (error) {
-              Alert.alert('Erro', 'Houve um problema ao processar a contratação. Tente novamente.');
-              console.error(error);
-            }
-          }
-        },
-      ]
-    );
+      router.push({
+        pathname: '/resumoPagamento',
+        params: { propostaId: propostaIdNum }
+      });
+    } catch (error) {
+      Alert.alert('Erro', 'Houve um problema ao processar a contratação. Tente novamente.');
+      console.error(error);
+    }
   };
 
   const nextMonth = () => {
