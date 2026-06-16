@@ -1,8 +1,12 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { Alert, ActivityIndicator, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { Alert, ActivityIndicator, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, FlatList } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import MapView, { Marker } from 'react-native-maps';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import axios from 'axios';
 import { servicoRepository } from '../database/servicoRepository';
 import { getUsuarioId } from '../database/authService';
 
@@ -24,6 +28,15 @@ export default function PostarServico() {
   const [complemento, setComplemento] = useState('');
   const [tipoImovel, setTipoImovel] = useState('');
   const [urgencia, setUrgencia] = useState('');
+  const [enderecoBusca, setEnderecoBusca] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [region, setRegion] = useState({
+    latitude: -23.5505, // Default São Paulo
+    longitude: -46.6333,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
 
   const [materiais, setMateriais] = useState('');
   const [metragem, setMetragem] = useState('');
@@ -93,6 +106,107 @@ export default function PostarServico() {
 
   const removeFoto = (index: number) => {
     setFotos(fotos.filter((_, i) => i !== index));
+  };
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateMapFromText = async (text: string) => {
+    if (text.length < 3) return;
+    try {
+      const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
+        params: {
+          address: text,
+          key: 'AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY',
+          language: 'pt-BR'
+        }
+      });
+
+      if (response.data.results && response.data.results.length > 0) {
+        const location = response.data.results[0].geometry.location;
+        setRegion({
+          latitude: location.lat,
+          longitude: location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao geocodificar endereço:', error);
+    }
+  };
+
+  const handleEditableAddressChange = (text: string) => {
+    setEnderecoBusca(text);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => updateMapFromText(text), 500);
+  };
+
+  const handleAddressSelect = async (prediction: any) => {
+    const placeId = prediction.place_id;
+    setEnderecoBusca(prediction.description);
+    setShowSuggestions(false);
+
+    try {
+      const response = await axios.get(`https://maps.googleapis.com/maps/api/place/details/json`, {
+        params: {
+          place_id: placeId,
+          key: 'AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY',
+          language: 'pt-BR',
+          fields: 'geometry,address_components'
+        }
+      });
+
+      const data = response.data.result;
+      if (data.geometry && data.geometry.location) {
+        setRegion({
+          latitude: data.geometry.location.lat,
+          longitude: data.geometry.location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      }
+
+      const cepComponent = data.address_components?.find((c: any) =>
+        c.types.includes('postal_code')
+      );
+      if (cepComponent) {
+        setCep(cepComponent.long_name);
+      }
+    } catch (error) {
+      console.error('Erro ao obter detalhes do endereço:', error);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão negada', 'Precisamos de acesso à localização para marcar o endereço no mapa.');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      setRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+
+      const reverseResult = await Location.reverseGeocodeAsync({ latitude, longitude });
+      if (reverseResult && reverseResult.length > 0) {
+        const item = reverseResult[0];
+        const fullAddress = `${item.street || ''}, ${item.district || ''}, ${item.city || ''} - ${item.region || ''}`;
+        setEnderecoBusca(fullAddress);
+        if (item.postalCode) {
+          setCep(item.postalCode);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível obter sua localização.');
+    }
   };
 
   const validateStep1 = () => {
@@ -193,81 +307,82 @@ export default function PostarServico() {
         {step === 1 && (
           <View>
             <Text style={styles.stepTitle}>Postar novo pedido</Text>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>TÍTULO DO PROJETO</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Reforma completa de banheiro"
-                value={titulo}
-                onChangeText={setTitulo}
-              />
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>DESCRIÇÃO</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Descreva detalhadamente o que você precisa..."
-                multiline
-                value={descricao}
-                onChangeText={setDescricao}
-              />
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CATEGORIAS</Text>
-              <View style={styles.chipsContainer}>
-                {categorias.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.chip, categoriasSelecionadas.includes(cat) && styles.chipActive]}
-                    onPress={() => toggleCategoria(cat)}
-                  >
-                    <Text style={[styles.chipText, categoriasSelecionadas.includes(cat) && styles.chipTextActive]}>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
+            <View style={styles.cardContainer}>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>TÍTULO DO PROJETO</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: Reforma completa de banheiro"
+                  value={titulo}
+                  onChangeText={setTitulo}
+                />
               </View>
-            </View>
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.label}>FOTOS</Text>
-                <Text style={styles.counterText}>{fotos.length}/6</Text>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>DESCRIÇÃO</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Descreva detalhadamente o que você precisa..."
+                  multiline
+                  value={descricao}
+                  onChangeText={setDescricao}
+                />
               </View>
-              <View style={styles.photoGrid}>
-                <TouchableOpacity
-                  style={styles.addPhotoBtn}
-                  onPress={() => {
-                    Alert.alert(
-                      'Adicionar Foto',
-                      'Escolha a origem da imagem',
-                      [
-                        { text: 'Tirar Foto', onPress: () => pickImage(true) },
-                        { text: 'Escolher da Galeria', onPress: () => pickImage(false) },
-                        { text: 'Cancelar', style: 'cancel' },
-                      ]
-                    );
-                  }}
-                  disabled={loadingFoto}
-                >
-                  {loadingFoto ? (
-                    <ActivityIndicator size="small" color="#ff6600" />
-                  ) : (
-                    <>
-                      <Ionicons name="camera" size={24} color="#adb5bd" />
-                      <Text style={styles.addPhotoText}>ADICIONAR</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-                {fotos.map((uri, index) => (
-                  <View key={index} style={styles.photoWrapper}>
-                    <Image source={{ uri }} style={styles.photoPreview} />
-                    <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeFoto(index)}>
-                      <Ionicons name="close-circle" size={20} color="#ff0000" />
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CATEGORIAS</Text>
+                <View style={styles.chipsContainer}>
+                  {categorias.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.chip, categoriasSelecionadas.includes(cat) && styles.chipActive]}
+                      onPress={() => toggleCategoria(cat)}
+                    >
+                      <Text style={[styles.chipText, categoriasSelecionadas.includes(cat) && styles.chipTextActive]}>{cat}</Text>
                     </TouchableOpacity>
-                  </View>
-                ))}
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.label}>FOTOS</Text>
+                  <Text style={styles.counterText}>{fotos.length}/6</Text>
+                </View>
+                <View style={styles.photoGrid}>
+                  <TouchableOpacity
+                    style={styles.addPhotoBtn}
+                    onPress={() => {
+                      Alert.alert(
+                        'Adicionar Foto',
+                        'Escolha a origem da imagem',
+                        [
+                          { text: 'Tirar Foto', onPress: () => pickImage(true) },
+                          { text: 'Escolher da Galeria', onPress: () => pickImage(false) },
+                          { text: 'Cancelar', style: 'cancel' },
+                        ]
+                      );
+                    }}
+                    disabled={loadingFoto}
+                  >
+                    {loadingFoto ? (
+                      <ActivityIndicator size="small" color="#ff6600" />
+                    ) : (
+                      <>
+                        <Ionicons name="camera" size={24} color="#adb5bd" />
+                        <Text style={styles.addPhotoText}>ADICIONAR</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  {fotos.map((uri, index) => (
+                    <View key={index} style={styles.photoWrapper}>
+                      <Image source={{ uri }} style={styles.photoPreview} />
+                      <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removeFoto(index)}>
+                        <Ionicons name="close-circle" size={20} color="#ff0000" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
           </View>
@@ -282,6 +397,24 @@ export default function PostarServico() {
               <View style={styles.rowIcon}>
                 <Ionicons name="location" size={18} color="#0a1f44" />
                 <Text style={styles.labelBold}> Endereço (Obrigatório)</Text>
+              </View>
+
+              <View style={styles.autocompleteWrapper}>
+                <GooglePlacesAutocomplete
+                  placeholder="Buscar endereço..."
+                  onPress={handleAddressSelect}
+                  onChangeText={handleEditableAddressChange}
+                  query={{
+                    key: 'AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY',
+                    language: 'pt-BR',
+                  }}
+                  fetchFetchDetails={true}
+                  styles={{
+                    textInput: styles.autocompleteInput,
+                    container: { flex: 0 },
+                    listView: styles.autocompleteList,
+                  }}
+                />
               </View>
 
               <Text style={styles.subLabel}>CEP</Text>
@@ -312,6 +445,27 @@ export default function PostarServico() {
                     onChangeText={setComplemento}
                   />
                 </View>
+              </View>
+
+              <View style={styles.mapContainer}>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.labelBold}>Localização no Mapa</Text>
+                </View>
+                <TouchableOpacity onPress={getCurrentLocation} style={[styles.locationBtn, { alignSelf: 'center', marginBottom: 10 }]}>
+                  <Ionicons name="locate" size={16} color="#fff" />
+                  <Text style={styles.locationBtnText}>Minha Localização</Text>
+                </TouchableOpacity>
+                <MapView
+                  style={styles.map}
+                  initialRegion={region}
+                  region={region}
+                  scrollEnabled={false}
+                  zoomControlEnabled={false}
+                  pinchToZoomEnable={false}
+                >
+                  <Marker coordinate={region} />
+                </MapView>
+                <Text style={styles.mapInfoText}>O mapa mostra a localização selecionada acima.</Text>
               </View>
             </View>
 
@@ -355,13 +509,6 @@ export default function PostarServico() {
                 ))}
               </View>
             </View>
-
-            <TouchableOpacity style={styles.coverageBtn}>
-              <View style={styles.coverageIcon}>
-                <Ionicons name="locate" size={20} color="#0a1f44" />
-              </View>
-              <Text style={styles.coverageText}>Verificar cobertura na região</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -374,7 +521,7 @@ export default function PostarServico() {
               <View style={styles.rowIcon}>
                 <MaterialIcons name="inventory" size={18} color="#0a1f44" />
                 <Text style={styles.labelBold}> Material (Obrigatório)</Text>
-              </View>>
+              </View>
               <Text style={styles.cardText}>Já possui os materiais necessários para a obra?</Text>
               <View style={styles.materialOptions}>
                 {opcoesMateriais.map((opt) => (
@@ -387,7 +534,6 @@ export default function PostarServico() {
                       name={opt === 'Sim' ? 'checkmark-circle' : opt === 'Não' ? 'close-circle' : 'refresh-circle'}
                       size={20}
                       color={materiais === opt ? '#fff' : '#0a1f44'}
-                    }
                     />
                     <Text style={[styles.materialBtnText, materiais === opt && styles.materialBtnTextActive]}>{opt}</Text>
                   </TouchableOpacity>
@@ -505,17 +651,17 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   stepTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#0a1f44',
-    marginBottom: 8,
+    marginBottom: 12,
     marginTop: 10,
   },
   stepSubtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#666',
     marginBottom: 25,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   fieldGroup: {
     marginBottom: 25,
@@ -552,6 +698,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  autocompleteWrapper: {
+    zIndex: 1000,
+    marginBottom: 15,
+  },
+  autocompleteInput: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  autocompleteList: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   textArea: {
     height: 120,
@@ -737,13 +906,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0a1f44',
   },
-  cardContainer: {
+  mapContainer: {
+    marginBottom: 25,
     backgroundColor: '#f8f9fa',
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 25,
+    padding: 15,
     borderWidth: 1,
     borderColor: '#eee',
+  },
+  map: {
+    width: '100%',
+    height: 200,
+    borderRadius: 15,
+    marginVertical: 10,
+  },
+  locationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ff6600',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 5,
+  },
+  locationBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  mapInfoText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  cardContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   cardText: {
     fontSize: 15,

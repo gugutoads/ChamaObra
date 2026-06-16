@@ -10,6 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY"
+        }
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Precisamos da sua localização para mostrar serviços próximos e permitir a seleção do endereço do serviço.",
         "NSCameraUsageDescription": "Precisamos acesso à câmera para tirar fotos do local do serviço.",
@@ -33,7 +38,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "apiKey": "AIzaSyBXM2p_5mqq3vvFkbkGHQd7jMm1W97JOJY"
         }
       },
       "package": "com.anonymous.MeuApp"
