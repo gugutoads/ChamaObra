@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, tipo: user.tipo },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'secret_fallback_chave_de_seguranca_chamaobra',
       { expiresIn: '7d' }
     );
 

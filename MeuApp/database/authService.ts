@@ -9,7 +9,15 @@ export const loginUsuario = async (email: string, senha: string) => {
     await SecureStore.setItemAsync('usuarioTipo', data.user.tipo);
     return { sucesso: true, usuario: data.user };
   } catch (error: any) {
-    const mensagem = error.response?.data?.error || 'Erro ao fazer login';
+    let mensagem = 'Erro ao fazer login';
+
+    if (error.response?.data?.error) {
+      const errorData = error.response.data.error;
+      mensagem = typeof errorData === 'string' ? errorData : JSON.stringify(errorData);
+    } else if (error.message) {
+      mensagem = error.message;
+    }
+
     return { sucesso: false, mensagem };
   }
 };

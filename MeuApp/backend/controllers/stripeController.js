@@ -1,8 +1,20 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+let stripe;
+
+function getStripe() {
+  if (!stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    }
+    stripe = require('stripe')(key);
+  }
+  return stripe;
+}
 
 async function createCheckoutSession(propostaId, valor) {
   try {
-    const session = await stripe.checkout.sessions.create({
+    const stripeClient = getStripe();
+    const session = await stripeClient.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {

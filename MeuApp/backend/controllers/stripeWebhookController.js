@@ -1,15 +1,27 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+let stripe;
 const { db } = require('../database');
 const { pagamentos, propostas, servicos } = require('../database/schema');
 const { eq } = require('drizzle-orm');
+
+function getStripe() {
+  if (!stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    }
+    stripe = require('stripe')(key);
+  }
+  return stripe;
+}
 
 async function handleWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   let event;
 
   try {
+    const stripeClient = getStripe();
     // O webhook do Stripe requer o corpo bruto (raw body) para verificação de assinatura
-    event = stripe.webhooks.constructEvent(
+    event = stripeClient.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET || 'whsec_...'
@@ -18,6 +30,9 @@ async function handleWebhook(req, res) {
     console.error('Erro na verificação da assinatura do Stripe:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  // ... rest of the function
+
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
